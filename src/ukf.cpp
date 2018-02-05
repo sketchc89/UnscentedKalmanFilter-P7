@@ -30,6 +30,7 @@ UKF::UKF() {
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 30;
   
+  // ******************************************************************************************
   //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -46,14 +47,26 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
   //DO NOT MODIFY measurement noise values above these are provided by the sensor manufacturer.
+  // ******************************************************************************************
   
-  /**
-  TODO:
+  //TODO Hint: one or more values initialized above might be wildly off...
+  //TODO CHECK time_us_
 
-  Complete the initialization. See ukf.h for other member properties.
+  // Time when state is true in microseconds
+  time_us_ = 0;
 
-  Hint: one or more values initialized above might be wildly off...
-  */
+  // State Dimension using CTRV Model
+  n_x_ = 5;
+
+  // Augmented State Dimension with uncertainty added
+  n_aug_ = 7;
+
+  // TODO: Design choice: Spreading factor
+  lambda_ = 3 - n_aug; 
+
+  // Initial predicted sigma points
+  Xsig_pred_ = MatrixXd(n_aug_, 2*n_aug_ + 1);
+  Xsig_pred_.setZero();
 }
 
 UKF::~UKF() {}
