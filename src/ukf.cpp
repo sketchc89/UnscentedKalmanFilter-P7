@@ -50,10 +50,9 @@ UKF::UKF() {
   // ******************************************************************************************
   
   //TODO Hint: one or more values initialized above might be wildly off...
-  //TODO CHECK time_us_
 
   // Time when state is true in microseconds
-  time_us_ = 0;
+  is_initialized_ = false;
 
   // State Dimension using CTRV Model
   n_x_ = 5;
@@ -72,10 +71,48 @@ UKF::UKF() {
 UKF::~UKF() {}
 
 /**
- * @param {MeasurementPackage} meas_package The latest measurement data of
+ * @param {MeasurementPackage} measurement_pack The latest measurement data of
  * either radar or laser.
  */
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
+void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
+  time_us_ = measurement_pack.timestamp_;
+  if (!is_initialized){
+    auto console = spdlog::stdout_logger_mt("console");
+    console->info("First measurement");
+
+    time_us_ = measurement_pack.timestamp_;
+    console->info("Time: {}", time_us_);
+    is_initialized = true;
+    time_us_ = measurement_pack.timestamp_;
+    P_ << 1,  0,  0,  0,
+          0,  1,  0,  0,
+          0,  0,  1000, 0,
+          0,  0,  0,  1000;
+    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+      console->debug("Initializing with RADAR");
+      double rho = measurement_pack.raw_measurements_(0);
+      double phi = calc.NormalizePhi(measurement_pack.raw_measurements_(1));
+      double rho_dot = measurment_pack.raw_measurements_(2);
+      
+        x_ << rho*cos(phi),
+            rho*sin(phi),
+            0,
+            0,
+            0;
+    }
+    if (measurement_pack.sensor_type_ == MeasurementPackage::LIDAR) {
+      x_ << measurement_pack.raw_measurements_(0),
+            measurement.pack.raw_measurements_(1),
+            0,
+            0,
+            0;
+    }
+
+    return;
+  }
+  double dt;
+  dt  = (measurement_pack.timestamp_ - times_us_) / 1000000.0;
+  Prediction();
   /**
   TODO:
 
@@ -100,9 +137,9 @@ void UKF::Prediction(double delta_t) {
 
 /**
  * Updates the state and the state covariance matrix using a laser measurement.
- * @param {MeasurementPackage} meas_package
+ * @param {MeasurementPackage} measurement_pack
  */
-void UKF::UpdateLidar(MeasurementPackage meas_package) {
+void UKF::UpdateLidar(MeasurementPackage measurement_pack) {
   /**
   TODO:
 
@@ -115,9 +152,9 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
 /**
  * Updates the state and the state covariance matrix using a radar measurement.
- * @param {MeasurementPackage} meas_package
+ * @param {MeasurementPackage} measurement_pack
  */
-void UKF::UpdateRadar(MeasurementPackage meas_package) {
+void UKF::UpdateRadar(MeasurementPackage measurement_pack) {
   /**
   TODO:
 
