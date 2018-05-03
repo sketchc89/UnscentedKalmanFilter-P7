@@ -2,6 +2,7 @@
 #define UKF_H
 
 #include "measurement_package.h"
+#include "tools.h"
 #include "Eigen/Dense"
 #include <vector>
 #include <string>
@@ -67,6 +68,10 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  auto console_;
+
+  Tools calc;
+
 
   /**
    * Constructor
@@ -83,6 +88,9 @@ public:
    * @param measurement_pack The latest measurement data of either radar or laser
    */
   void ProcessMeasurement(MeasurementPackage measurement_pack);
+
+  void InitializeState(MeasurementPackage measurement_pack);
+  void InitializeSigmaPoints();
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance

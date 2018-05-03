@@ -22,7 +22,7 @@ UKF::UKF() {
   x_ = VectorXd(5);
 
   // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  P_ = MatrixXd::Identity(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 30;
@@ -61,8 +61,9 @@ UKF::UKF() {
   n_aug_ = 7;
 
   // TODO: Design choice: Spreading factor
-  lambda_ = 3 - n_aug; 
+  lambda_ = 3 - n_aug_; 
 
+  //auto console_ = spdlog::stdout_logger_mt("console");
   // Initial predicted sigma points
   Xsig_pred_ = MatrixXd(n_aug_, 2*n_aug_ + 1);
   Xsig_pred_.setZero();
@@ -76,49 +77,73 @@ UKF::~UKF() {}
  */
 void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   time_us_ = measurement_pack.timestamp_;
-  if (!is_initialized){
-    auto console = spdlog::stdout_logger_mt("console");
-    console->info("First measurement");
-
-    time_us_ = measurement_pack.timestamp_;
-    console->info("Time: {}", time_us_);
-    is_initialized = true;
-    time_us_ = measurement_pack.timestamp_;
-    P_ << 1,  0,  0,  0,
-          0,  1,  0,  0,
-          0,  0,  1000, 0,
-          0,  0,  0,  1000;
-    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-      console->debug("Initializing with RADAR");
-      double rho = measurement_pack.raw_measurements_(0);
-      double phi = calc.NormalizePhi(measurement_pack.raw_measurements_(1));
-      double rho_dot = measurment_pack.raw_measurements_(2);
-      
-        x_ << rho*cos(phi),
-            rho*sin(phi),
-            0,
-            0,
-            0;
-    }
-    if (measurement_pack.sensor_type_ == MeasurementPackage::LIDAR) {
-      x_ << measurement_pack.raw_measurements_(0),
-            measurement.pack.raw_measurements_(1),
-            0,
-            0,
-            0;
-    }
-
+  if (!is_initialized_){
+    //console->info("First measurement");
+    InitializeState(measurement_pack);
+    InitializeSigmaPoints();
+    is_initialized_ = true;
     return;
   }
+  
   double dt;
-  dt  = (measurement_pack.timestamp_ - times_us_) / 1000000.0;
-  Prediction();
-  /**
-  TODO:
+  dt  = (measurement_pack.timestamp_ - time_us_) / 1000000.0;
+  Prediction(dt);
+  
+  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+    //console->debug("Updating RADAR");
+    //UpdateRadar(measurement_pack);
+  }
+  else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+    //console->debug("Updating LIDAR");
+    //UpdateLidar(measurement_pack);
+  }
+}
 
-  Complete this function! Make sure you switch between lidar and radar
-  measurements.
-  */
+/*
+ * Initializes state and sigma points from first measurement 
+ */
+void UKF::InitializeState(MeasurementPackage measurement_pack) {
+  
+  time_us_ = measurement_pack.timestamp_;
+  //console->info("Time: {}", time_us_);
+  time_us_ = measurement_pack.timestamp_;
+  
+  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+    //console->debug("Initializing with RADAR");
+    double rho = measurement_pack.raw_measurements_(0);
+    double phi = calc.NormalizePhi(measurement_pack.raw_measurements_(1));
+    double rho_dot = measurement_pack.raw_measurements_(2);
+    
+      x_ << rho*cos(phi),
+          rho*sin(phi),
+          0,
+          0,
+          0;
+  }
+  else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+    x_ << measurement_pack.raw_measurements_(0),
+          measurement_pack.raw_measurements_(1),
+          0,
+          0,
+          0;
+  }
+}
+
+/*
+ * Initialize sigma points
+ */
+void UKF::InitializeSigmaPoints() {
+
+  //console->debug("Initializing sigma points");
+  //Calculate sqrt of P_
+  MatrixXd A = P_.llt().matrixL();
+  //First sigma point is mean
+  Xsig_pred_.col(0) = x_;
+  //Calculate remaining sigma points from mean and spreading parameter 
+  for (int i=0; i<n_x_; ++i) {
+    Xsig_pred_.col(i+1)       = x_ + sqrt(lambda_+n_x_) + A.col(i);
+    Xsig_pred_.col(i+1+n_x_)  = x_ - sqrt(lambda_+n_x_) + A.col(i);
+  }
 }
 
 /**
@@ -127,12 +152,45 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
-  /**
-  TODO:
 
-  Complete this function! Estimate the object's location. Modify the state
-  vector, x_. Predict sigma points, the state, and the state covariance matrix.
-  */
+  PredictSigmaPoints(delta_t);
+  VectorXd weights = VectorXd(2*n_aug_ + 1);
+  double weight_0 = lambda_/(lambda_ + n_aug_);
+  weights(0) = weight_0;
+  for (int i=1; i<2*n_aug_+1; ++i) {
+    weights(i) = 0.5/(n_aug_+lambda);
+  }
+  
+  VectorXd x_pred = VectorXd(2*n_aug_ + 1);
+  VectorXd P_pred = VectorXd(2*n_aug_ + 1);
+  x_pred.fill(0.0);
+  P_pred.fill(0.0);
+
+  //predicted state mean
+  for (int i=0; i<2*n_aug_+1; ++i) {
+   x_pred = x_pred + weights(i) * Xsig_pred_.col(i);
+  }
+
+  //predicted state covariance matrix
+  for (int i=0; i< 2*n_aug_+1; ++i) {
+    VectorXd x_diff = Xsig_pred_.col(i) - x_pred;
+    x_diff(3) = calc.NormalizePhi(x_diff(3));
+    P_pred = P_pred + weights(i) * x_diff * x_diff.transpose();
+  }
+
+  x_ = x_pred;
+  P_ = P_pred;
+}
+
+/**
+ * Predicts sigma points given the state and time since the last measurement
+ * @param {double} delta_t the change in time (in seconds) between the last
+ * measurement and this one.
+ */
+void UKF::PredictSigmaPoints(double delta_t) {
+  for (int i=0; i<2*n_aug_+1; ++i) {
+    double p_x = x_(
+  }
 }
 
 /**
