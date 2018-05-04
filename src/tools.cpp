@@ -31,3 +31,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   rmse /= est_sz;
   return rmse.array().sqrt();
 }
+
+double Tools::NormalizePhi(double phi) {
+    return phi - 2*M_PI*std::floor((phi + M_PI) / (2*M_PI));
+}
