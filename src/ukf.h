@@ -65,11 +65,18 @@ public:
   ///* Augmented state dimension
   int n_aug_;
 
+  //Measurement process dimension
+  int n_rad_;
+  int n_las_;
+
+  //Process noise matrix
+  MatrixXd R_las_;
+  MatrixXd R_rad_;
+
   ///* Sigma point spreading parameter
   double lambda_;
 
   auto console_;
-
   Tools calc;
 
 
@@ -89,8 +96,28 @@ public:
    */
   void ProcessMeasurement(MeasurementPackage measurement_pack);
 
+  /*
+   * Initializes state from first measurement
+   * @param measurement_pack The latest measurement data of either radar or laser
+   */
   void InitializeState(MeasurementPackage measurement_pack);
+
+  /*
+   * Initialize sigma points from first measurement
+   */
   void InitializeSigmaPoints();
+
+  /*
+   * Returns a vector of weights for use with sigma points
+   */
+  VectorXd SetWeights();
+
+  /**
+   * Predicts sigma points given the state and time since the last measurement
+   * @param {double} delta_t the change in time (in seconds) between the last
+   * measurement and this one
+   */
+  void PredictSigmaPoints(double delta_t);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
