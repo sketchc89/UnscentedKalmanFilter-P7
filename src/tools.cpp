@@ -1,5 +1,6 @@
 #include <iostream>
 #include "tools.h"
+#include "spdlog/spdlog.h"
 
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
@@ -34,4 +35,25 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
 
 double Tools::NormalizePhi(double phi) {
     return phi - 2*M_PI*std::floor((phi + M_PI) / (2*M_PI));
+}
+
+
+void Tools::PrintMatrix(std::string name, const MatrixXd &m) {
+  auto console = spdlog::get("console");
+  console->info("Printing  {}x{} matrix {}", m.rows(), m.cols(), name);
+  for (int i = 0; i < m.rows(); ++i) {
+    for (int j = 0; j < m.cols(); ++j) {
+      console->info("\t{}\t{},{}\t{}", name, i, j, m(i, j));
+    }
+  }
+  console->info("----------------------------");
+}
+
+void Tools::PrintVector(std::string name, const VectorXd &v) {
+  auto console = spdlog::get("console");
+  console->info("Printing vector {}", name);
+  for (int i = 0; i < v.size(); ++i) {
+    console->info("\t{}\t{}\t{}", name, i, v(i));
+  }
+  console->info("----------------------------");
 }

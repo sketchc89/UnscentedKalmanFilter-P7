@@ -30,7 +30,7 @@ public:
   MatrixXd P_;
 
   ///* predicted sigma points matrix
-  MatrixXd Xsig_pred_;
+  MatrixXd Xsig_;
 
   ///* time when the state is true, in us
   long long time_us_;
@@ -65,18 +65,22 @@ public:
   ///* Augmented state dimension
   int n_aug_;
 
+  ///* Number of sigma points
+  int n_sig_;
+
   //Measurement process dimension
   int n_rad_;
   int n_las_;
 
   //Process noise matrix
+  MatrixXd Q_;
+  //Measurement noise matrix
   MatrixXd R_las_;
   MatrixXd R_rad_;
 
   ///* Sigma point spreading parameter
   double lambda_;
 
-  auto console_;
   Tools calc;
 
 
@@ -103,21 +107,31 @@ public:
   void InitializeState(MeasurementPackage measurement_pack);
 
   /*
-   * Initialize sigma points from first measurement
+   * Return x_ vector with additional rows
    */
-  void InitializeSigmaPoints();
+  VectorXd AugmentX();
+
+  /*
+   * Return P_ vector with process noise
+   */
+  MatrixXd AugmentP();
+
+  /*
+   * Generate sigma points for prediction
+   */
+  MatrixXd GenerateSigmaPoints(VectorXd x_aug, MatrixXd P_aug);
 
   /*
    * Returns a vector of weights for use with sigma points
    */
-  VectorXd SetWeights();
+  //VectorXd SetWeights();
 
   /**
    * Predicts sigma points given the state and time since the last measurement
    * @param {double} delta_t the change in time (in seconds) between the last
    * measurement and this one
    */
-  void PredictSigmaPoints(double delta_t);
+  void PredictSigmaPoints(MatrixXd Xsig_aug, double delta_t);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
