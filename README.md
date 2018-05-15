@@ -11,6 +11,8 @@ The UnscentedKalmanFilter program was run on both datasets. The results are belo
 ---
 ![Dataset 2](./Docs/dataset_2.gif)
 ---
+Acceleration and yaw rate process noise were tuned manually. Results are recorded in [this csv which can be opened in excel/calc](./tune.csv).
+
 ## Areas for improvement
 * Testing
 
