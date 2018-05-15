@@ -5,12 +5,14 @@ This project utilizes an Unscented Kalman Filter to estimate the state of a movi
 
 ## Results
 
-TODO: The UnscentedKalmanFilter program was run on both datasets. The results are below.
-[](No results yet)
-[](No results yet)
-
+The UnscentedKalmanFilter program was run on both datasets. The results are below.
+---
+![Dataset 1](./Docs/dataset_1.gif)
+---
+![Dataset 2](./Docs/dataset_2.gif)
+---
 ## Areas for improvement
-* TODO
+* Testing
 
 ## Protocol
 
@@ -54,23 +56,3 @@ OUTPUT: values provided by the c++ program to the simulator
 4. Run it: `./UnscentedKF `
 
 One change was made to CMakeLists.txt to support spdlog, a C++ logging library that eliminated the need for print statement debugging.
-
-## Tests
-The code was developed using the [Catch testing framework](https://github.com/catchorg/Catch2). 
-
-* [Bash script](./src/tests/run_tests.sh) was written to run all of the tests. It completes the following steps.
-
-* First compile tests_main.cpp in order to not have to recompile
-
-```sh
-$ g++ --std=c++11 tests_main.cpp -c
-```
-
-* Next compile tests
-
-```sh
-$ g++ --std=c++11 tests_main.o test_rmse.cpp -o test_rmse
-$ ./test_rmse -r compact
-```
-
-* If changes are made to the test file, tests_main does not need to be recompiled
